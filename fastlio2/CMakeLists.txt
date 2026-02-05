@@ -56,7 +56,6 @@ target_link_libraries(lio_node
   ${PCL_LIBRARIES}
 )
 
-
 install(TARGETS lio_node DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY rviz DESTINATION share/${PROJECT_NAME})
