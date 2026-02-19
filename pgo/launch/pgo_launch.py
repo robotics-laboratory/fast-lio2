@@ -24,7 +24,7 @@ def generate_launch_description():
                 executable="lio_node",
                 name="lio_node",
                 output="screen",
-                parameters=[{"config_path": lio_config_path.perform(launch.LaunchContext())}]
+                parameters=[{"config_path": lio_config_path.perform(launch.LaunchContext()), "use_sim_time": True}]
             ),
             launch_ros.actions.Node(
                 package="pgo",
@@ -32,7 +32,7 @@ def generate_launch_description():
                 executable="pgo_node",
                 name="pgo_node",
                 output="screen",
-                parameters=[{"config_path": pgo_config_path.perform(launch.LaunchContext())}]
+                parameters=[{"config_path": pgo_config_path.perform(launch.LaunchContext()), "use_sim_time": True}]
             ),
             launch_ros.actions.Node(
                 package="rviz2",
@@ -40,6 +40,7 @@ def generate_launch_description():
                 executable="rviz2",
                 name="rviz2",
                 output="screen",
+                parameters=[{"use_sim_time": True}],
                 arguments=["-d", rviz_cfg.perform(launch.LaunchContext())],
             )
         ]

@@ -23,7 +23,7 @@ def generate_launch_description():
                 executable="lio_node",
                 name="lio_node",
                 output="screen",
-                parameters=[{"config_path": config_path.perform(launch.LaunchContext())}]
+                parameters=[{"config_path": config_path.perform(launch.LaunchContext()), "use_sim_time": True}]
             ),
             launch_ros.actions.Node(
                 package="rviz2",
@@ -31,6 +31,7 @@ def generate_launch_description():
                 executable="rviz2",
                 name="rviz2",
                 output="screen",
+                parameters=[{"use_sim_time": True}],
                 arguments=["-d", rviz_cfg.perform(launch.LaunchContext())],
             ),
         ]

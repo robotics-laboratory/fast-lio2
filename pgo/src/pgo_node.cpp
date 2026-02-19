@@ -33,7 +33,7 @@ struct NodeState
 {
     std::mutex message_mutex;
     std::queue<CloudWithPose> cloud_buffer;
-    double last_message_time;
+    double last_message_time = -1.0;
 };
 
 class PGONode : public rclcpp::Node
@@ -88,7 +88,8 @@ public:
         std::lock_guard<std::mutex>(m_state.message_mutex);
         CloudWithPose cp;
         cp.pose.setTime(cloud_msg->header.stamp.sec, cloud_msg->header.stamp.nanosec);
-        if (cp.pose.second < m_state.last_message_time)
+        constexpr double kOutOfOrderToleranceSec = 1e-3;
+        if (cp.pose.second + kOutOfOrderToleranceSec < m_state.last_message_time)
         {
             RCLCPP_WARN(this->get_logger(), "Received out of order message");
             return;
@@ -190,16 +191,15 @@ public:
 
     void timerCB()
     {
-        if (m_state.cloud_buffer.size() == 0)
-            return;
-        CloudWithPose cp = m_state.cloud_buffer.front();
-        // 清理队列
+        CloudWithPose cp;
         {
             std::lock_guard<std::mutex>(m_state.message_mutex);
-            while (!m_state.cloud_buffer.empty())
-            {
-                m_state.cloud_buffer.pop();
-            }
+            if (m_state.cloud_buffer.empty())
+                return;
+            // Keep only the newest synchronized pair to avoid processing stale backlog.
+            cp = m_state.cloud_buffer.back();
+            std::queue<CloudWithPose> empty_queue;
+            std::swap(m_state.cloud_buffer, empty_queue);
         }
         builtin_interfaces::msg::Time cur_time;
         cur_time.sec = cp.pose.sec;

@@ -204,7 +204,9 @@ void LidarProcessor::updateLossFunc(State &state, SharedState &share_data)
         if (esti_plane(points_near, 0.1, pabcd))
         {
             double pd2 = pabcd(0) * point_world_vec(0) + pabcd(1) * point_world_vec(1) + pabcd(2) * point_world_vec(2) + pabcd(3);
-            double s = 1 - 0.9 * std::fabs(pd2) / std::sqrt(point_body_vec.norm());
+            // double s = 1 - 0.9 * std::fabs(pd2) / std::sqrt(point_body_vec.norm());
+            const double range = point_body_vec.norm() + 1e-3; 
+            double s = 1.0 - 0.9 * std::fabs(pd2) / range;
             if (s > 0.9)
             {
                 m_point_selected_flag[i] = true;
