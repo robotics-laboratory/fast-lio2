@@ -4,10 +4,10 @@ body_frame: body
 world_frame: lidar
 print_time_cost: false
 
-lidar_filter_num: 6
+lidar_filter_num: 20
 lidar_min_range: 0.5
-lidar_max_range: 30.0
-scan_resolution: 0.15
+lidar_max_range: 20.0
+scan_resolution: 0.5
 map_resolution: 0.3
 
 cube_len: 300

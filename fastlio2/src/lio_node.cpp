@@ -207,6 +207,7 @@ public:
     {
         if (path_pub->get_subscription_count() <= 0)
             return;
+        m_state_data.path.header.stamp = Utils::getTime(time);
         geometry_msgs::msg::PoseStamped pose;
         pose.header.frame_id = frame_id;
         pose.header.stamp = Utils::getTime(time);

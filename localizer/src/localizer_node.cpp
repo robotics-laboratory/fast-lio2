@@ -40,6 +40,7 @@ struct NodeState
     rclcpp::Time last_send_tf_time = rclcpp::Clock().now();
     builtin_interfaces::msg::Time last_message_time;
     CloudType::Ptr last_cloud = std::make_shared<CloudType>();
+    nav_msgs::msg::Odometry last_local_odom;
     M3D last_r;                          // localmap_body_r
     V3D last_t;                          // localmap_body_t
     M3D last_offset_r = M3D::Identity(); // map_localmap_r
@@ -70,6 +71,8 @@ public:
         m_reloc_check_srv = this->create_service<interface::srv::IsValid>("relocalize_check", std::bind(&LocalizerNode::relocCheckCB, this, std::placeholders::_1, std::placeholders::_2));
 
         m_map_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("map_cloud", 10);
+        m_localized_odom_pub = this->create_publisher<nav_msgs::msg::Odometry>("localized_odom", 10);
+        m_localized_pose_pub = this->create_publisher<geometry_msgs::msg::PoseStamped>("localized_pose", 10);
 
         m_timer = this->create_wall_timer(10ms, std::bind(&LocalizerNode::timerCB, this));
     }
@@ -115,6 +118,8 @@ public:
         if (!update_tf)
         {
             sendBroadCastTF(m_state.last_message_time);
+            publishLocalizedOdometry(m_state.last_message_time);
+            publishLocalizedPose(m_state.last_message_time);
             return;
         }
 
@@ -160,6 +165,8 @@ public:
             }
         }
         sendBroadCastTF(current_time);
+        publishLocalizedOdometry(current_time);
+        publishLocalizedPose(current_time);
         publishMapCloud(current_time);
     }
     void syncCB(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &cloud_msg, const nav_msgs::msg::Odometry::ConstSharedPtr &odom_msg)
@@ -168,6 +175,7 @@ public:
         std::lock_guard<std::mutex>(m_state.message_mutex);
 
         pcl::fromROSMsg(*cloud_msg, *m_state.last_cloud);
+        m_state.last_local_odom = *odom_msg;
 
         m_state.last_r = Eigen::Quaterniond(odom_msg->pose.pose.orientation.w,
                                             odom_msg->pose.pose.orientation.x,
@@ -201,6 +209,60 @@ public:
         transformStamped.transform.rotation.z = q.z();
         transformStamped.transform.rotation.w = q.w();
         m_tf_broadcaster->sendTransform(transformStamped);
+    }
+
+    void publishLocalizedOdometry(const builtin_interfaces::msg::Time &time)
+    {
+        if (m_localized_odom_pub->get_subscription_count() <= 0)
+            return;
+
+        nav_msgs::msg::Odometry localized_odom;
+        {
+            std::lock_guard<std::mutex>(m_state.message_mutex);
+            localized_odom = m_state.last_local_odom;
+
+            const M3D map_body_r = m_state.last_offset_r * m_state.last_r;
+            const V3D map_body_t = m_state.last_offset_r * m_state.last_t + m_state.last_offset_t;
+            const Eigen::Quaterniond q(map_body_r);
+
+            localized_odom.header.stamp = time;
+            localized_odom.header.frame_id = m_config.map_frame;
+            localized_odom.pose.pose.position.x = map_body_t.x();
+            localized_odom.pose.pose.position.y = map_body_t.y();
+            localized_odom.pose.pose.position.z = map_body_t.z();
+            localized_odom.pose.pose.orientation.x = q.x();
+            localized_odom.pose.pose.orientation.y = q.y();
+            localized_odom.pose.pose.orientation.z = q.z();
+            localized_odom.pose.pose.orientation.w = q.w();
+        }
+
+        m_localized_odom_pub->publish(localized_odom);
+    }
+
+    void publishLocalizedPose(const builtin_interfaces::msg::Time &time)
+    {
+        if (m_localized_pose_pub->get_subscription_count() <= 0)
+            return;
+
+        geometry_msgs::msg::PoseStamped localized_pose;
+        {
+            std::lock_guard<std::mutex>(m_state.message_mutex);
+            const M3D map_body_r = m_state.last_offset_r * m_state.last_r;
+            const V3D map_body_t = m_state.last_offset_r * m_state.last_t + m_state.last_offset_t;
+            const Eigen::Quaterniond q(map_body_r);
+
+            localized_pose.header.stamp = time;
+            localized_pose.header.frame_id = m_config.map_frame;
+            localized_pose.pose.position.x = map_body_t.x();
+            localized_pose.pose.position.y = map_body_t.y();
+            localized_pose.pose.position.z = map_body_t.z();
+            localized_pose.pose.orientation.x = q.x();
+            localized_pose.pose.orientation.y = q.y();
+            localized_pose.pose.orientation.z = q.z();
+            localized_pose.pose.orientation.w = q.w();
+        }
+
+        m_localized_pose_pub->publish(localized_pose);
     }
 
     void relocCB(const std::shared_ptr<interface::srv::Relocalize::Request> request, std::shared_ptr<interface::srv::Relocalize::Response> response)
@@ -281,6 +343,8 @@ private:
     rclcpp::Service<interface::srv::Relocalize>::SharedPtr m_reloc_srv;
     rclcpp::Service<interface::srv::IsValid>::SharedPtr m_reloc_check_srv;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_map_cloud_pub;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_localized_odom_pub;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr m_localized_pose_pub;
 };
 int main(int argc, char **argv)
 {
