@@ -125,14 +125,14 @@ Visualization Manager:
       Length: 1
       Name: Axes
       Radius: 0.10000000149011612
-      Reference Frame: lidar
+      Reference Frame: odom_fastlio
       Value: true
     - Class: rviz_default_plugins/Axes
       Enabled: true
       Length: 0.5
       Name: Axes
       Radius: 0.05000000074505806
-      Reference Frame: body
+      Reference Frame: base
       Value: true
     - Alpha: 1
       Buffer Length: 1
@@ -165,7 +165,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: lidar
+    Fixed Frame: odom_fastlio
     Frame Rate: 30
   Name: root
   Tools:

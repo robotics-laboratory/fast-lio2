@@ -1,7 +1,7 @@
 imu_topic: /livox/imu
 lidar_topic: /livox/lidar
-body_frame: body
-world_frame: lidar
+body_frame: base
+world_frame: odom_fastlio
 print_time_cost: false
 
 lidar_filter_num: 20
@@ -25,6 +25,10 @@ ieskf_max_iter: 5
 
 gravity_align: true
 esti_il: false
+
+# base <- lidar_link
+r_bl: [-1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0]
+t_bl: [0.0, 0.0, 0.115]
 
 r_il: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
 t_il: [-0.011, -0.02329, 0.04412]

@@ -26,7 +26,7 @@ struct NodeConfig
     std::string cloud_topic = "/lio/body_cloud";
     std::string odom_topic = "/lio/odom";
     std::string map_frame = "map";
-    std::string local_frame = "lidar";
+    std::string local_frame = "odom_fastlio";
 };
 
 struct NodeState

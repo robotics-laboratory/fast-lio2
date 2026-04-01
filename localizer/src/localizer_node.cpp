@@ -25,7 +25,7 @@ struct NodeConfig
     std::string cloud_topic = "/fastlio2/body_cloud";
     std::string odom_topic = "/fastlio2/lio_odom";
     std::string map_frame = "map";
-    std::string local_frame = "lidar";
+    std::string local_frame = "odom_fastlio";
     double update_hz = 1.0;
 };
 

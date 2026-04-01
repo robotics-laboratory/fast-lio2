@@ -1,7 +1,7 @@
 cloud_topic: /fastlio2/body_cloud
 odom_topic: /fastlio2/lio_odom
 map_frame: map
-local_frame: lidar
+local_frame: odom_fastlio
 
 key_pose_delta_deg: 10
 key_pose_delta_trans: 0.5
