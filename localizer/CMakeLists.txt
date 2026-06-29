@@ -45,6 +45,7 @@ target_link_libraries(localizer_node ${PCL_LIBRARIES}  yaml-cpp)
 
 
 install(TARGETS localizer_node DESTINATION lib/${PROJECT_NAME})
+install(PROGRAMS scripts/foxglove_localization_proxy.py DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY rviz DESTINATION share/${PROJECT_NAME})

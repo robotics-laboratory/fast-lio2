@@ -3,6 +3,7 @@ lidar_topic: /livox/lidar
 body_frame: base
 world_frame: odom_fastlio
 print_time_cost: false
+publish_tf: false
 
 lidar_filter_num: 20
 lidar_min_range: 0.5

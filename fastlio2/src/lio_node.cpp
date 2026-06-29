@@ -30,6 +30,7 @@ struct NodeConfig
     std::string body_frame = "base";
     std::string world_frame = "odom_fastlio";
     bool print_time_cost = false;
+    bool publish_tf = true;
     M3D body_r_l = M3D::Identity();
     V3D body_t_l = V3D::Zero();
 };
@@ -61,7 +62,10 @@ public:
         m_world_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("world_cloud", 10000);
         m_path_pub = this->create_publisher<nav_msgs::msg::Path>("lio_path", 10000);
         m_odom_pub = this->create_publisher<nav_msgs::msg::Odometry>("lio_odom", 10000);
-        m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
+        if (m_node_config.publish_tf)
+        {
+            m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
+        }
 
         m_state_data.path.poses.clear();
         m_state_data.path.header.frame_id = m_node_config.world_frame;
@@ -91,6 +95,10 @@ public:
         m_node_config.body_frame = config["body_frame"].as<std::string>();
         m_node_config.world_frame = config["world_frame"].as<std::string>();
         m_node_config.print_time_cost = config["print_time_cost"].as<bool>();
+        if (config["publish_tf"])
+        {
+            m_node_config.publish_tf = config["publish_tf"].as<bool>();
+        }
         if (config["r_bl"] && config["t_bl"])
         {
             std::vector<double> t_bl_vec = config["t_bl"].as<std::vector<double>>();
@@ -295,7 +303,10 @@ public:
         if (m_builder->status() != BuilderStatus::MAPPING)
             return;
 
-        broadCastTF(m_tf_broadcaster, m_node_config.world_frame, m_node_config.body_frame, m_package.cloud_end_time);
+        if (m_node_config.publish_tf)
+        {
+            broadCastTF(m_tf_broadcaster, m_node_config.world_frame, m_node_config.body_frame, m_package.cloud_end_time);
+        }
 
         publishOdometry(m_odom_pub, m_node_config.world_frame, m_node_config.body_frame, m_package.cloud_end_time);
 
