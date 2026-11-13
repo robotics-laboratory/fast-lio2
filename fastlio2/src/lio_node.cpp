@@ -28,11 +28,16 @@ struct NodeConfig
     std::string imu_topic = "/livox/imu";
     std::string lidar_topic = "/livox/lidar";
     std::string body_frame = "base";
-    std::string world_frame = "odom_fastlio";
+    std::string world_frame = "odom_ekf";
     bool print_time_cost = false;
     bool publish_tf = true;
     M3D body_r_l = M3D::Identity();
     V3D body_t_l = V3D::Zero();
+    // diagonal covariances reported in lio_odom (consumed by robot_localization)
+    double odom_pos_cov = 1e-4;  // m^2
+    double odom_rot_cov = 1e-4;  // rad^2
+    double odom_vel_cov = 1e-3;  // (m/s)^2
+    double odom_gyro_cov = 1e-4; // (rad/s)^2
 };
 struct StateData
 {
@@ -99,6 +104,14 @@ public:
         {
             m_node_config.publish_tf = config["publish_tf"].as<bool>();
         }
+        if (config["odom_pos_cov"])
+            m_node_config.odom_pos_cov = config["odom_pos_cov"].as<double>();
+        if (config["odom_rot_cov"])
+            m_node_config.odom_rot_cov = config["odom_rot_cov"].as<double>();
+        if (config["odom_vel_cov"])
+            m_node_config.odom_vel_cov = config["odom_vel_cov"].as<double>();
+        if (config["odom_gyro_cov"])
+            m_node_config.odom_gyro_cov = config["odom_gyro_cov"].as<double>();
         if (config["r_bl"] && config["t_bl"])
         {
             std::vector<double> t_bl_vec = config["t_bl"].as<std::vector<double>>();
@@ -239,6 +252,29 @@ public:
         odom.twist.twist.linear.x = vel.x();
         odom.twist.twist.linear.y = vel.y();
         odom.twist.twist.linear.z = vel.z();
+
+        // angular velocity in the body frame: mean bias-corrected gyro over the scan,
+        // rotated from the IMU frame (x_i = r_ib * x_b)
+        if (!m_package.imus.empty())
+        {
+            V3D gyro_mean = V3D::Zero();
+            for (const auto &imu : m_package.imus)
+                gyro_mean += imu.gyro;
+            gyro_mean /= static_cast<double>(m_package.imus.size());
+            const M3D r_ib = m_kf->x().r_il * m_node_config.body_r_l.transpose();
+            const V3D omega_b = r_ib.transpose() * (gyro_mean - m_kf->x().bg);
+            odom.twist.twist.angular.x = omega_b.x();
+            odom.twist.twist.angular.y = omega_b.y();
+            odom.twist.twist.angular.z = omega_b.z();
+        }
+
+        for (int i = 0; i < 3; ++i)
+        {
+            odom.pose.covariance[i * 6 + i] = m_node_config.odom_pos_cov;
+            odom.pose.covariance[(i + 3) * 6 + (i + 3)] = m_node_config.odom_rot_cov;
+            odom.twist.covariance[i * 6 + i] = m_node_config.odom_vel_cov;
+            odom.twist.covariance[(i + 3) * 6 + (i + 3)] = m_node_config.odom_gyro_cov;
+        }
         odom_pub->publish(odom);
     }
 

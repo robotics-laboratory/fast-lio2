@@ -125,7 +125,7 @@ Visualization Manager:
       Length: 1
       Name: Axes
       Radius: 0.10000000149011612
-      Reference Frame: odom_fastlio
+      Reference Frame: odom_ekf
       Value: true
     - Class: rviz_default_plugins/Axes
       Enabled: true
@@ -165,7 +165,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: odom_fastlio
+    Fixed Frame: odom_ekf
     Frame Rate: 30
   Name: root
   Tools:

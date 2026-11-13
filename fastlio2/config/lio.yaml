@@ -1,9 +1,15 @@
 imu_topic: /livox/imu
 lidar_topic: /livox/lidar
 body_frame: base
-world_frame: odom_fastlio
+world_frame: odom_ekf
 print_time_cost: false
 publish_tf: false
+
+# diagonal covariances in /fastlio2/lio_odom (pose: m^2, rad^2; twist: (m/s)^2, (rad/s)^2)
+odom_pos_cov: 0.0001
+odom_rot_cov: 0.0001
+odom_vel_cov: 0.001
+odom_gyro_cov: 0.0001
 
 lidar_filter_num: 20
 lidar_min_range: 0.5

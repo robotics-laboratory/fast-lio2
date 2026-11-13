@@ -25,7 +25,7 @@ struct NodeConfig
     std::string cloud_topic = "/fastlio2/body_cloud";
     std::string odom_topic = "/fastlio2/lio_odom";
     std::string map_frame = "map";
-    std::string local_frame = "odom_fastlio";
+    std::string local_frame = "odom_ekf";
     double update_hz = 1.0;
 };
 
@@ -193,12 +193,15 @@ public:
         }
     }
 
-    void sendBroadCastTF(builtin_interfaces::msg::Time &time)
+    void sendBroadCastTF(builtin_interfaces::msg::Time &)
     {
+        // map -> odom changes slowly and is re-sent every timer tick, so stamp it with the
+        // current time: re-sending the last scan stamp produces TF_REPEATED_DATA and makes
+        // lookups for times after the last scan fail
         geometry_msgs::msg::TransformStamped transformStamped;
         transformStamped.header.frame_id = m_config.map_frame;
         transformStamped.child_frame_id = m_config.local_frame;
-        transformStamped.header.stamp = time;
+        transformStamped.header.stamp = this->now();
         Eigen::Quaterniond q(m_state.last_offset_r);
         V3D t = m_state.last_offset_t;
         transformStamped.transform.translation.x = t.x();
